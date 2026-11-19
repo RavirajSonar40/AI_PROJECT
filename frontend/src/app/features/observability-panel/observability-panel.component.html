@@ -1,0 +1,734 @@
+<section class="obs-page">
+
+  <div class="page-head">
+
+    <div>
+      <span class="eyebrow">
+        EVALUATION &amp; OBSERVABILITY
+      </span>
+
+      <h2>
+        Quality and operations
+      </h2>
+
+      <p class="muted">
+        Live request telemetry plus a
+        reproducible comparison of two RAG
+        configurations on the demo corpus.
+      </p>
+    </div>
+
+    <div class="head-actions">
+
+      <select
+        [(ngModel)]="hours"
+        name="hours"
+        (ngModelChange)="refresh()"
+      >
+        <option [ngValue]="24">
+          last 24 hours
+        </option>
+
+        <option [ngValue]="72">
+          last 3 days
+        </option>
+
+        <option [ngValue]="168">
+          last 7 days
+        </option>
+      </select>
+
+      <button
+        class="ghost-button"
+        type="button"
+        [disabled]="loading()"
+        (click)="refresh()"
+      >
+        Refresh
+      </button>
+
+    </div>
+
+  </div>
+
+
+  @if (error()) {
+
+    <div class="error">
+      {{ error() }}
+    </div>
+
+  }
+
+
+  @if (overview(); as data) {
+
+    <div class="kpis">
+
+      <article class="kpi">
+        <span>Requests</span>
+        <strong>{{ data.requests }}</strong>
+        <small>
+          {{ data.requests_all_time }} all time
+        </small>
+      </article>
+
+      <article class="kpi">
+        <span>Error rate</span>
+        <strong
+          [class.bad]="data.error_rate > 0"
+        >
+          {{ percent(data.error_rate) }}
+        </strong>
+        <small>
+          {{ data.failures }} failed of
+          {{ data.requests }}
+        </small>
+      </article>
+
+      <article class="kpi">
+        <span>p95 latency</span>
+        <strong>
+          {{ (data.p95_latency_ms / 1000).toFixed(1) }}s
+        </strong>
+        <small>
+          p50 {{ (data.p50_latency_ms / 1000).toFixed(1) }}s
+          · avg {{ (data.avg_latency_ms / 1000).toFixed(1) }}s
+        </small>
+      </article>
+
+      <article class="kpi">
+        <span>Tokens</span>
+        <strong>
+          {{ data.total_tokens | number }}
+        </strong>
+        <small>
+          {{ data.usage_source === 'provider'
+            ? 'provider-reported prompt + completion'
+            : data.usage_source === 'mixed'
+              ? 'mixed provider + estimated usage'
+              : 'estimated prompt + completion' }}
+        </small>
+      </article>
+
+      <article class="kpi">
+        <span>Estimated cost</span>
+        <strong>
+          ${{ data.estimated_cost_usd.toFixed(4) }}
+        </strong>
+        <small>
+          {{ data.provider }} ·
+          {{ data.model }}
+        </small>
+      </article>
+
+      <article class="kpi">
+        <span>Window</span>
+        <strong>
+          {{ data.window_hours }}h
+        </strong>
+        <small>
+          {{ data.successes }} successful
+          responses
+        </small>
+      </article>
+
+    </div>
+
+
+    <div class="panels">
+
+      <article class="panel">
+
+        <div class="panel-head">
+          <h3>
+            Recent requests
+          </h3>
+
+          <span class="muted">
+            tokens are estimated
+          </span>
+        </div>
+
+        @if (data.recent_requests.length) {
+
+          <div class="table">
+
+            <div class="row head">
+              <span>Endpoint</span>
+              <span>Question</span>
+              <span>Latency</span>
+              <span>Tokens</span>
+              <span>Status</span>
+            </div>
+
+            @for (
+              request of data.recent_requests;
+              track $index
+            ) {
+
+              <div class="row">
+
+                <span class="endpoint">
+                  {{ request.endpoint }}
+                </span>
+
+                <span
+                  class="question"
+                  [title]="request.question ?? ''"
+                >
+                  {{ request.question || '—' }}
+                </span>
+
+                <span class="mono">
+                  {{ request.latency_ms }} ms
+                </span>
+
+                <span class="mono">
+                  {{ request.total_tokens }}
+                </span>
+
+                <span
+                  class="pill"
+                  [class.fail]="!request.success"
+                >
+                  {{
+                    request.success
+                      ? 'ok'
+                      : 'failed'
+                  }}
+                </span>
+
+              </div>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <p class="empty">
+            No requests in this window yet.
+            Ask the agent a question to
+            populate the dashboard.
+          </p>
+
+        }
+
+      </article>
+
+
+      <article class="panel">
+
+        <div class="panel-head">
+          <h3>
+            Failed queries
+          </h3>
+
+          <span class="muted">
+            {{ data.failed_queries.length }}
+          </span>
+        </div>
+
+        @for (
+          failure of data.failed_queries;
+          track $index
+        ) {
+
+          <div class="failure">
+
+            <span class="endpoint">
+              {{ failure.endpoint }}
+            </span>
+
+            <p>
+              {{ failure.question || '—' }}
+            </p>
+
+            <small>
+              {{ failure.error || 'Unknown error' }}
+            </small>
+
+          </div>
+
+        } @empty {
+
+          <p class="empty">
+            No failed queries. Every request
+            in this window produced an answer.
+          </p>
+
+        }
+
+      </article>
+
+    </div>
+
+
+    <div class="panel endpoints">
+
+      <div class="panel-head">
+        <h3>
+          By endpoint
+        </h3>
+      </div>
+
+      <div class="endpoint-grid">
+
+        @for (
+          endpoint of data.endpoints;
+          track endpoint.endpoint
+        ) {
+
+          <div class="endpoint-card">
+
+            <span class="endpoint">
+              {{ endpoint.endpoint }}
+            </span>
+
+            <strong>
+              {{ endpoint.requests }}
+              requests
+            </strong>
+
+            <small>
+              {{ endpoint.avg_latency_ms }} ms avg ·
+              {{ endpoint.tokens }} tokens
+              @if (endpoint.failures) {
+                · {{ endpoint.failures }} failed
+              }
+            </small>
+
+          </div>
+
+        } @empty {
+
+          <p class="empty">
+            Endpoint breakdown appears after
+            the first request.
+          </p>
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <article class="panel evaluation">
+
+    <div class="panel-head">
+
+      <div>
+        <span class="eyebrow">
+          OFFLINE EVALUATION
+        </span>
+
+        <h3>
+          Baseline vs enhanced RAG
+        </h3>
+
+        <p class="muted">
+          Faithfulness, answer relevance,
+          context precision and recall are
+          deterministic proxies, not an LLM
+          judge. Runs take roughly 10 seconds
+          per case.
+        </p>
+      </div>
+
+      <div class="eval-controls">
+
+        <select
+          [(ngModel)]="dataset"
+          name="dataset"
+        >
+          @for (
+            item of datasets();
+            track item.name
+          ) {
+            <option [ngValue]="item.name">
+              {{ item.name }}
+              ({{ item.case_count }} cases)
+            </option>
+          }
+        </select>
+
+        <select
+          [(ngModel)]="maxCases"
+          name="maxCases"
+        >
+          <option [ngValue]="2">2 cases</option>
+          <option [ngValue]="4">4 cases</option>
+          <option [ngValue]="6">6 cases</option>
+          <option [ngValue]="8">8 cases</option>
+          <option [ngValue]="10">10 cases</option>
+        </select>
+
+        <button
+          class="primary-button"
+          type="button"
+          [disabled]="evaluating()"
+          (click)="runEvaluation()"
+        >
+          {{
+            evaluating()
+              ? 'Evaluating...'
+              : 'Run evaluation'
+          }}
+        </button>
+
+      </div>
+
+    </div>
+
+
+    @if (evaluating()) {
+
+      <div class="running">
+        <span class="spinner"></span>
+        Running both pipelines over the
+        dataset. This calls the language
+        model once per case, so give it a
+        few seconds.
+      </div>
+
+    }
+
+
+    <div class="run-history">
+
+      @for (
+        run of runs();
+        track run.id
+      ) {
+
+        <button
+          type="button"
+          class="run-chip"
+          [class.active]="
+            selectedRun()?.run?.id === run.id
+          "
+          (click)="openRun(run.id)"
+        >
+          <span>
+            #{{ run.id }} ·
+            {{ run.dataset }}
+          </span>
+
+          <small>
+            {{ run.case_count }} cases ·
+            {{ run.status }} ·
+            {{ run.started_at | date:'shortTime' }}
+          </small>
+        </button>
+
+      } @empty {
+
+        <span class="muted">
+          No evaluation runs yet.
+        </span>
+
+      }
+
+    </div>
+
+
+    @if (loadingRun()) {
+
+      <p class="empty">
+        Loading run...
+      </p>
+
+    }
+
+
+    @if (selectedRun(); as detail) {
+
+      @if (detail.run.summary; as summary) {
+
+        <div class="comparison">
+
+          <div class="comparison-head">
+
+            <div>
+              <span class="eyebrow">
+                RUN #{{ detail.run.id }}
+              </span>
+
+              <h4>
+                {{
+                  summary.comparison.winner
+                    ? summary.comparison.winner
+                      + ' pipeline wins'
+                    : 'Single pipeline run'
+                }}
+              </h4>
+            </div>
+
+            @if (
+              summary.comparison.deltas[
+                'composite_score'
+              ] !== undefined
+            ) {
+
+              <span
+                class="delta big"
+                [ngClass]="
+                  deltaClass(
+                    summary.comparison.deltas[
+                      'composite_score'
+                    ]
+                  )
+                "
+              >
+                {{
+                  deltaPercent(
+                    summary.comparison.deltas[
+                      'composite_score'
+                    ]
+                  )
+                }}
+                pts composite
+              </span>
+
+            }
+
+          </div>
+
+
+          <div class="table metrics-table">
+
+            <div class="row head">
+              <span>Metric</span>
+
+              @for (
+                pipeline of summary.pipelines;
+                track pipeline.name
+              ) {
+                <span>
+                  {{ pipeline.name }}
+                </span>
+              }
+
+              <span>Delta</span>
+            </div>
+
+            @for (
+              row of metricRows;
+              track row.key
+            ) {
+
+              <div class="row">
+
+                <span class="metric-name">
+                  {{ row.label }}
+                </span>
+
+                @for (
+                  pipeline of summary.pipelines;
+                  track pipeline.name
+                ) {
+                  <span class="mono">
+                    {{
+                      metricValue(pipeline, row)
+                    }}
+                  </span>
+                }
+
+                <span
+                  class="mono delta"
+                  [ngClass]="
+                    deltaClass(
+                      summary.comparison.deltas[
+                        row.key
+                      ]
+                    )
+                  "
+                >
+                  {{
+                    summary.comparison.deltas[
+                      row.key
+                    ] !== undefined
+                      ? deltaPercent(
+                          summary.comparison
+                            .deltas[row.key]
+                        )
+                      : '—'
+                  }}
+                </span>
+
+              </div>
+
+            }
+
+          </div>
+
+
+          <p class="provenance">
+
+            @for (
+              pipeline of summary.pipelines;
+              track pipeline.name
+            ) {
+              <span>
+                <b>{{ pipeline.name }}</b>:
+                {{ pipeline.label }} —
+                {{ pipeline.cases }} cases,
+                {{ pipeline.failures }} failures.
+              </span>
+            }
+
+          </p>
+
+        </div>
+
+
+        <div class="cases">
+
+          <div class="panel-head">
+            <h3>
+              Cases
+            </h3>
+
+            <button
+              class="ghost-button"
+              type="button"
+              (click)="closeRun()"
+            >
+              Hide
+            </button>
+          </div>
+
+          @for (
+            item of detail.cases;
+            track item.id
+          ) {
+
+            <details class="case">
+
+              <summary>
+
+                <span
+                  class="pill"
+                  [class.fail]="!item.passed"
+                >
+                  {{
+                    item.passed
+                      ? 'pass'
+                      : 'fail'
+                  }}
+                </span>
+
+                <span class="pipeline">
+                  {{ item.pipeline }}
+                </span>
+
+                <span class="case-question">
+                  {{ item.question }}
+                </span>
+
+                <span class="mono case-stats">
+                  faith
+                  {{ caseMetric(item.metrics, 'faithfulness') }}
+                  · prec
+                  {{ caseMetric(item.metrics, 'context_precision') }}
+                  · {{ item.latency_ms }} ms
+                </span>
+
+              </summary>
+
+              <div class="case-body">
+
+                <div class="case-grid">
+
+                  <div>
+                    <span class="label">
+                      Retrieved documents
+                    </span>
+
+                    <p>
+                      {{
+                        item.retrieved_document_ids
+                          ?.join(', ') || 'none'
+                      }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span class="label">
+                      Expected documents
+                    </span>
+
+                    <p>
+                      {{
+                        item.expected_document_ids
+                          ?.join(', ') || 'none'
+                      }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span class="label">
+                      Tokens
+                    </span>
+
+                    <p>
+                      {{ item.total_tokens }}
+                    </p>
+                  </div>
+
+                </div>
+
+                <span class="label">
+                  Answer
+                </span>
+
+                <p class="answer">
+                  {{ item.answer || '—' }}
+                </p>
+
+                @if (item.expected_answer) {
+
+                  <span class="label">
+                    Reference answer
+                  </span>
+
+                  <p class="answer muted">
+                    {{ item.expected_answer }}
+                  </p>
+
+                }
+
+                @if (item.error) {
+
+                  <p class="failure-line">
+                    {{ item.error }}
+                  </p>
+
+                }
+
+              </div>
+
+            </details>
+
+          }
+
+        </div>
+
+      } @else {
+
+        <p class="empty">
+          This run has no summary yet
+          (status: {{ detail.run.status }}).
+        </p>
+
+      }
+
+    }
+
+  </article>
+
+</section>

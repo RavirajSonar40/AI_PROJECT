@@ -53,6 +53,12 @@ class SemanticSearchRequest(BaseModel):
         max_length=500,
     )
 
+    user_id: str = Field(
+        default="demo-user",
+        min_length=1,
+        max_length=128,
+    )
+
     limit: int = Field(
         default=5,
         ge=1,

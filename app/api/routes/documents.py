@@ -47,6 +47,7 @@ from app.schemas.document import (
     DocumentRead,
 )
 from app.repositories.document_chunk import DocumentChunkRepository
+from app.repositories.interaction import InteractionRepository
 from app.services.text_chunker import (
     ChunkingError,
     split_text,
@@ -57,6 +58,7 @@ from app.services.document_storage import (
     
 )
 from app.repositories.document_chunk import DocumentChunkRepository
+from app.repositories.interaction import InteractionRepository
 
 from app.services.text_chunker import (
     ChunkingError,
@@ -446,6 +448,23 @@ async def semantic_search_documents(
         )
         for chunk, distance in matches
     ]
+
+    try:
+        interaction_repository = (
+            InteractionRepository(session)
+        )
+
+        for result in results[:3]:
+            await interaction_repository.record(
+                user_id=payload.user_id,
+                event_type="search",
+                document_id=result.document_id,
+                chunk_id=result.chunk_id,
+                query=payload.query,
+            )
+
+    except Exception:
+        await session.rollback()
 
     return SemanticSearchResponse(
         query=payload.query,

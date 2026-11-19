@@ -32,6 +32,16 @@ class Settings(BaseSettings):
         "llama-3.1-8b-instant"
     )
 
+    bazaarlink_api_key: str | None = None
+
+    bazaarlink_base_url: str = (
+        "https://api.bazaarlink.ai/v1"
+    )
+
+    bazaarlink_model: str = (
+        "deepseek-v4.1-flash"
+    )
+
     ollama_base_url: str = (
         "http://localhost:11434"
     )
@@ -83,5 +93,14 @@ class Settings(BaseSettings):
             "postgresql://",
             1,
         )
+
+    @property
+    def frontend_origins(self) -> list[str]:
+        """Allow one or more comma-separated browser origins in hosted deployments."""
+        return [
+            origin.strip()
+            for origin in self.frontend_origin.split(",")
+            if origin.strip()
+        ]
 
 settings = Settings()

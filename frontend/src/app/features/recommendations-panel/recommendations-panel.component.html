@@ -1,0 +1,197 @@
+<section class="recommendation-card">
+
+  <div class="header">
+
+    <div>
+      <span class="eyebrow">
+        PERSONALISED
+      </span>
+
+      <h3>
+        Recommended for you
+      </h3>
+    </div>
+
+    <button
+      class="ghost-button"
+      type="button"
+      [disabled]="loading()"
+      (click)="refresh()"
+    >
+      Refresh
+    </button>
+
+  </div>
+
+
+  @if (recommendations(); as data) {
+
+    <div class="strategy">
+
+      <span
+        class="badge"
+        [class.personalised]="
+          data.strategy === 'personalised'
+        "
+      >
+        {{
+          data.strategy === 'personalised'
+            ? 'Personalised ranking'
+            : 'Cold start'
+        }}
+      </span>
+
+      <span class="muted">
+        {{ data.interaction_count }}
+        interaction{{ data.interaction_count === 1 ? '' : 's' }}
+        recorded
+      </span>
+
+    </div>
+
+  }
+
+
+  @if (error()) {
+
+    <div class="error">
+      {{ error() }}
+    </div>
+
+  }
+
+
+  @if (loading() && !recommendations()) {
+
+    <p class="muted">
+      Building your recommendations...
+    </p>
+
+  } @else {
+
+    <div class="items">
+
+      @for (
+        item of recommendations()?.items ?? [];
+        track item.document_id
+      ) {
+
+        <article class="item">
+
+          <div class="item-head">
+
+            <div class="item-title">
+
+              <span class="rank">
+                {{ $index + 1 }}
+              </span>
+
+              <strong>
+                {{ item.filename }}
+              </strong>
+
+            </div>
+
+            <span
+              class="score"
+              [title]="'Blended score: ' + item.score"
+            >
+              {{ percentage(item.score) }}
+            </span>
+
+          </div>
+
+
+          <div class="bar">
+            <span
+              [style.width]="scoreWidth(item.score)"
+            ></span>
+          </div>
+
+
+          <p class="reason">
+            {{ item.reason }}
+          </p>
+
+          <p class="preview">
+            {{ item.preview }}
+          </p>
+
+
+          <div class="signals">
+
+            <span>
+              semantic
+              <b>
+                {{ percentage(item.semantic_score) }}
+              </b>
+            </span>
+
+            <span>
+              behaviour
+              <b>
+                {{ percentage(item.behavioural_score) }}
+              </b>
+            </span>
+
+            <span>
+              popularity
+              <b>
+                {{ percentage(item.popularity_score) }}
+              </b>
+            </span>
+
+            @if (item.seen) {
+              <span class="seen">
+                already explored
+              </span>
+            }
+
+          </div>
+
+
+          <div class="feedback">
+
+            <span class="muted">
+              Relevant?
+            </span>
+
+            <button
+              type="button"
+              class="thumb"
+              [class.selected]="hasFeedback(item.document_id) === 'up'"
+              (click)="rate(item, true)"
+              title="Mark as relevant"
+            >
+              👍
+            </button>
+
+            <button
+              type="button"
+              class="thumb"
+              [class.selected]="hasFeedback(item.document_id) === 'down'"
+              (click)="rate(item, false)"
+              title="Mark as not relevant"
+            >
+              👎
+            </button>
+
+          </div>
+
+        </article>
+
+      } @empty {
+
+        <div class="empty">
+          No recommendations yet. Ask the agent a
+          question or upload a document to
+          bootstrap the ranking.
+        </div>
+
+      }
+
+    </div>
+
+  }
+
+</section>

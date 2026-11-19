@@ -1,3 +1,5 @@
+import time
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -6,33 +8,40 @@ from fastapi import (
     Response,
     status,
 )
-
-from app.services.rate_limiter import (
-    check_rag_rate_limit,
-)
-
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.dependencies import get_db
 from app.repositories.document_chunk import (
     DocumentChunkRepository,
 )
-from app.services.ollama_provider import (
-    LLMProviderError,
-    OllamaProvider,
-)
-
-from app.db.dependencies import get_db
 from app.schemas.rag import (
     RAGRequest,
     RAGResponse,
     RAGSource,
 )
+from app.services.chat_model_provider import (
+    ChatModelProvider,
+)
 from app.services.embedding_service import (
     EmbeddingGenerationError,
+)
+from app.services.interaction_recorder import (
+    record_answer_interactions,
+)
+from app.services.observability import (
+    record_llm_request,
 )
 from app.services.ollama_provider import (
     LLMProviderError,
 )
 from app.services.rag_service import RAGService
+from app.services.rate_limiter import (
+    check_rag_rate_limit,
+)
+from app.services.token_usage import (
+    estimate_prompt_tokens,
+    estimate_tokens,
+)
 
 
 router = APIRouter(
@@ -51,7 +60,6 @@ async def ask_rag(
     response: Response,
     session: AsyncSession = Depends(get_db),
 ):
-
     client_identifier = (
         request.client.host
         if request.client
@@ -93,16 +101,18 @@ async def ask_rag(
     for header, value in (
         rate_limit_headers.items()
     ):
-        response.headers[
-            header
-        ] = value
-    # Rate limiting
-    chunk_repository = DocumentChunkRepository(session)
-    service = RAGService(
-        chunk_retriever=chunk_repository,
-        llm=OllamaProvider(),
+        response.headers[header] = value
+
+    chunk_repository = DocumentChunkRepository(
+        session
     )
 
+    service = RAGService(
+        chunk_retriever=chunk_repository,
+        llm=ChatModelProvider(),
+    )
+
+    started = time.perf_counter()
 
     try:
         answer, matches = await service.answer(
@@ -115,8 +125,29 @@ async def ask_rag(
         EmbeddingGenerationError,
         LLMProviderError,
     ) as exc:
+        await record_llm_request(
+            session,
+            endpoint="/rag/ask",
+            pipeline="rag",
+            question=payload.question,
+            route="knowledge",
+            latency_ms=int(
+                (
+                    time.perf_counter()
+                    - started
+                )
+                * 1000
+            ),
+            prompt_tokens=0,
+            completion_tokens=0,
+            success=False,
+            error=str(exc),
+        )
+
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=(
+                status.HTTP_503_SERVICE_UNAVAILABLE
+            ),
             detail=str(exc),
         ) from exc
 
@@ -133,6 +164,44 @@ async def ask_rag(
         )
         for chunk, distance in matches
     ]
+
+    latency_ms = int(
+        (time.perf_counter() - started) * 1000
+    )
+
+    context = "\n\n".join(
+        source.content
+        for source in sources
+    )
+
+    await record_llm_request(
+        session,
+        endpoint="/rag/ask",
+        pipeline="rag",
+        question=payload.question,
+        route="knowledge",
+        latency_ms=latency_ms,
+        prompt_tokens=estimate_prompt_tokens(
+            payload.question,
+            context,
+        ),
+        completion_tokens=estimate_tokens(
+            answer
+        ),
+        usage_source=(
+            service.llm.last_usage.source
+            if getattr(service.llm, "last_usage", None)
+            else "estimated"
+        ),
+        success=True,
+    )
+
+    await record_answer_interactions(
+        session,
+        payload.user_id,
+        payload.question,
+        sources,
+    )
 
     return RAGResponse(
         question=payload.question,

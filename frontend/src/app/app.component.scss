@@ -67,11 +67,22 @@ nav {
 }
 
 nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 14px;
 
   color: #8c99ad;
 
   border-radius: 10px;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+nav a:hover {
+  color: #eef3ff;
+  background: rgba(90, 124, 255, 0.1);
+  transform: translateX(2px);
 }
 
 nav a.active {
@@ -154,6 +165,29 @@ header p {
     300px;
 }
 
+.page-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.knowledge-layout {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.knowledge-layout app-planning-panel {
+  grid-column: 1 / -1;
+}
+
+.panel-surface {
+  background: rgba(13, 18, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
 .right-column {
   display: flex;
   flex-direction: column;
@@ -184,8 +218,14 @@ header p {
 }
 
 @media (max-width: 1050px) {
-  .dashboard {
+  .dashboard,
+  .page-grid,
+  .knowledge-layout {
     grid-template-columns: 1fr;
+  }
+
+  .knowledge-layout app-planning-panel {
+    grid-column: auto;
   }
 }
 
@@ -195,10 +235,45 @@ header p {
   }
 
   .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 14px 16px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .brand {
+    margin-bottom: 12px;
+  }
+
+  nav {
+    display: flex;
+    gap: 6px;
+    margin-top: 0;
+    overflow-x: auto;
+  }
+
+  nav a {
+    flex: 0 0 auto;
+    padding: 9px 11px;
+    font-size: 0.82rem;
+  }
+
+  .stack {
     display: none;
   }
 
   main {
-    padding: 20px;
+    padding: 22px 16px;
+  }
+
+  header {
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  header h1 {
+    font-size: 2rem;
   }
 }

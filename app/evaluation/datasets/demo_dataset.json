@@ -1,0 +1,72 @@
+[
+  {
+    "id": "vacation",
+    "category": "HR",
+    "question": "How many vacation days do employees get and how do they request them?",
+    "expected_document_ids": [1],
+    "expected_answer": "25 working days for a permanent contract, 2.5 days per month for fixed-term staff, requested in PeopleHub at least 15 calendar days in advance."
+  },
+  {
+    "id": "remote-work",
+    "category": "HR",
+    "question": "How many days can an employee work remotely and what is the monthly allowance?",
+    "expected_document_ids": [2],
+    "expected_answer": "3 remote days and 2 office days per week, with a 40 euro monthly allowance."
+  },
+  {
+    "id": "benefits",
+    "category": "HR",
+    "question": "What does the health insurance cover and what is the annual training budget?",
+    "expected_document_ids": [4],
+    "expected_answer": "100% of the employee premium, 60% for spouse and children, and 1200 euros of training budget per year."
+  },
+  {
+    "id": "passwords",
+    "category": "Security",
+    "question": "What are the password and multi-factor authentication requirements?",
+    "expected_document_ids": [5],
+    "expected_answer": "At least 16 characters, no forced 90-day rotation, mandatory MFA with TOTP or FIDO2."
+  },
+  {
+    "id": "p1-sla",
+    "category": "Support",
+    "question": "What is the SLA for a P1 incident?",
+    "expected_document_ids": [7],
+    "expected_answer": "15 minute first response, 4 hour resolution target, 24x7 coverage for Enterprise and Premium."
+  },
+  {
+    "id": "refund",
+    "category": "Customer",
+    "question": "How long does a refund take and who pays the return shipping?",
+    "expected_document_ids": [8],
+    "expected_answer": "30 calendar days to return, refund in 5 to 10 working days, Basic customers pay 4.95 euros."
+  },
+  {
+    "id": "rag-definition",
+    "category": "Technical",
+    "question": "What is RAG and why does it reduce hallucinations?",
+    "expected_document_ids": [12],
+    "expected_answer": "Retrieval augmented generation retrieves relevant fragments and gives them to the model as context, so answers are grounded and citable."
+  },
+  {
+    "id": "human-approval",
+    "category": "Technical",
+    "question": "What happens before the agent executes a dangerous action?",
+    "expected_document_ids": [14],
+    "expected_answer": "The graph raises an interrupt, pauses, and waits for explicit human approval before resuming."
+  },
+  {
+    "id": "billing",
+    "category": "Finance",
+    "question": "How much does the Premium plan cost and how many users does it include?",
+    "expected_document_ids": [9],
+    "expected_answer": "89 euros per month, 10 included users and 500 GB of storage."
+  },
+  {
+    "id": "out-of-scope",
+    "category": "Abstention",
+    "question": "What is the capital of Mongolia and how many people live there?",
+    "expected_document_ids": [],
+    "expected_answer": null
+  }
+]

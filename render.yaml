@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: ai-knowledge-action-platform-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
+      - key: AGENT_MODE
+        value: tool_calling
+      - key: AGENT_RECURSION_LIMIT
+        value: "12"
+
+  - type: cron
+    name: ai-knowledge-action-platform-healthcheck
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    schedule: "*/10 * * * *"
+    startCommand: >-
+      python -c "import os, urllib.request;
+      urllib.request.urlopen(os.environ['BACKEND_URL'] + '/health/live', timeout=20).read()"
+    envVars:
+      - key: BACKEND_URL
+        sync: false

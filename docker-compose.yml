@@ -1,4 +1,16 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai_platform_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -7,8 +19,19 @@ services:
     environment:
       DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql+psycopg://ai_platform:ai_platform_dev@db:5432/ai_platform}
       REDIS_URL: redis://redis:6379/0
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      HOME: /app/data
+      HF_HOME: /app/data/hf-cache
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:4b}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.1-8b-instant}
+      BAZAARLINK_API_KEY: ${BAZAARLINK_API_KEY:-}
+      BAZAARLINK_BASE_URL: ${BAZAARLINK_BASE_URL:-https://api.bazaarlink.ai/v1}
+      BAZAARLINK_MODEL: ${BAZAARLINK_MODEL:-deepseek-v4.1-flash}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
+      RAG_RATE_LIMIT_REQUESTS: ${RAG_RATE_LIMIT_REQUESTS:-10}
+      RAG_RATE_LIMIT_WINDOW_SECONDS: ${RAG_RATE_LIMIT_WINDOW_SECONDS:-60}
       AGENT_MODE: ${AGENT_MODE:-tool_calling}
       AGENT_RECURSION_LIMIT: ${AGENT_RECURSION_LIMIT:-12}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
@@ -45,7 +68,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

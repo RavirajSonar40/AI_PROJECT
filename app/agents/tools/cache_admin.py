@@ -32,8 +32,8 @@ async def clear_embedding_cache() -> str:
                 "clear_embedding_cache"
             ),
             "message": (
-                "¿Quieres borrar la "
-                "caché de embeddings?"
+                "Do you want to clear the "
+                "embedding cache?"
             ),
         },
         response_schema=(

@@ -173,9 +173,9 @@ def build_agent_graph(
         answer = (
             f"{system_info['app_name']} "
             f"v{system_info['version']} "
-            f"está ejecutándose en el "
-            f"entorno "
-            f"{system_info['environment']}."
+            f"is running in the "
+            f"{system_info['environment']} "
+            f"environment."
         )
 
         return {

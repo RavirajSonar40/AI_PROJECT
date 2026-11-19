@@ -16,6 +16,12 @@ class AgentRequest(BaseModel):
         max_length=1000,
     )
 
+    user_id: str = Field(
+        default="demo-user",
+        min_length=1,
+        max_length=128,
+    )
+
     limit: int = Field(
         default=5,
         ge=1,

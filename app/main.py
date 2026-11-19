@@ -16,8 +16,20 @@ from app.api.routes.agent import (
 from app.api.routes.documents import (
     router as documents_router,
 )
+from app.api.routes.evaluation import (
+    router as evaluation_router,
+)
+from app.api.routes.observability import (
+    router as observability_router,
+)
+from app.api.routes.planning import (
+    router as planning_router,
+)
 from app.api.routes.rag import (
     router as rag_router,
+)
+from app.api.routes.recommendations import (
+    router as recommendations_router,
 )
 from app.api.routes.system import (
     router as system_router,
@@ -34,8 +46,6 @@ from app.middleware.request_logging import (
     RequestLoggingMiddleware,
 )
 
-
-configure_logging()
 
 configure_logging()
 configure_ai_tracing()
@@ -70,9 +80,7 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.frontend_origin,
-    ],
+    allow_origins=settings.frontend_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,4 +108,20 @@ app.include_router(
 
 app.include_router(
     agent_router
+)
+
+app.include_router(
+    planning_router
+)
+
+app.include_router(
+    recommendations_router
+)
+
+app.include_router(
+    evaluation_router
+)
+
+app.include_router(
+    observability_router
 )

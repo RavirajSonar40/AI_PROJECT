@@ -1,15 +1,12 @@
 import { Component } from '@angular/core';
-
-import { ChatPanelComponent } from './features/chat-panel/chat-panel.component';
-import { DocumentPanelComponent } from './features/document-panel/document-panel.component';
-import { SystemStatusComponent } from './features/system-status/system-status.component';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
 
   standalone: true,
 
-  imports: [ChatPanelComponent, DocumentPanelComponent, SystemStatusComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
 
   templateUrl: './app.component.html',
 

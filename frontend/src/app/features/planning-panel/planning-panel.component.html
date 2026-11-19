@@ -1,0 +1,445 @@
+<section class="plan-card">
+
+  <div class="plan-header">
+
+    <div>
+      <span class="eyebrow">
+        PLANNING &amp; VERIFICATION
+      </span>
+
+      <h2>
+        Task agent
+      </h2>
+
+      <p class="muted">
+        Decompose a goal, gather evidence,
+        draft a deliverable, verify it and
+        release it only after human approval.
+      </p>
+    </div>
+
+    <button
+      class="ghost-button"
+      type="button"
+      (click)="reset()"
+    >
+      Reset
+    </button>
+
+  </div>
+
+
+  <form
+    class="composer"
+    (ngSubmit)="run()"
+  >
+
+    <textarea
+      [(ngModel)]="task"
+      name="task"
+      rows="3"
+      placeholder="e.g. Prepare a short onboarding checklist for a new support engineer, using our internal policies."
+      [disabled]="loading()"
+    ></textarea>
+
+    <div class="composer-actions">
+
+      <label class="revision-select">
+        Reflection loops
+
+        <select
+          [(ngModel)]="maxRevisions"
+          name="maxRevisions"
+        >
+          <option [ngValue]="0">
+            none
+          </option>
+
+          <option [ngValue]="1">
+            one revision
+          </option>
+
+          <option [ngValue]="2">
+            two revisions
+          </option>
+        </select>
+      </label>
+
+      <button
+        class="primary-button"
+        type="submit"
+        [disabled]="loading()"
+      >
+        {{ loading() ? 'Running...' : 'Run plan' }}
+      </button>
+
+    </div>
+
+  </form>
+
+
+  @if (error()) {
+
+    <div class="error">
+      {{ error() }}
+    </div>
+
+  }
+
+
+  @if (loading() || result()) {
+
+    <ol class="stages">
+
+      @for (
+        stage of stages;
+        track stage;
+        let index = $index
+      ) {
+
+        <li
+          [class.done]="index < activeStage()"
+          [class.active]="
+            index === activeStage()
+          "
+        >
+
+          <span class="dot">
+            {{
+              index < activeStage()
+                ? '✓'
+                : index + 1
+            }}
+          </span>
+
+          <span class="stage-label">
+            {{ stage }}
+          </span>
+
+        </li>
+
+      }
+
+    </ol>
+
+  }
+
+
+  @if (result(); as data) {
+
+    <article class="summary">
+
+      <div class="summary-head">
+
+        <h3>
+          {{ data.plan_summary || 'Research plan' }}
+        </h3>
+
+        <span
+          class="status"
+          [class.rejected]="
+            data.status === 'rejected'
+          "
+          [class.interrupted]="
+            data.status === 'interrupted'
+          "
+        >
+          {{ data.status }}
+        </span>
+
+      </div>
+
+      <div class="meta-row">
+
+        <span>
+          {{ data.plan_steps.length }} steps
+        </span>
+
+        <span>
+          {{ data.evidence.length }} evidence chunks
+        </span>
+
+        <span>
+          revision {{ data.revision_count }}
+        </span>
+
+        @if (data.confidence !== null) {
+          <span>
+            verifier confidence
+            {{ confidence(data.confidence) }}
+          </span>
+        }
+
+      </div>
+
+
+      <ol class="steps">
+
+        @for (
+          step of data.plan_steps;
+          track step.id
+        ) {
+
+          <li class="step">
+
+            <span
+              class="step-icon"
+              [class.empty]="step.status === 'empty'"
+            >
+              {{ stepIcon(step) }}
+            </span>
+
+            <div class="step-body">
+
+              <div class="step-title">
+                {{ step.id }}. {{ step.title }}
+              </div>
+
+              <div class="step-meta">
+                <span class="action">
+                  {{ step.action }}
+                </span>
+
+                @if (step.query) {
+                  <span class="query">
+                    “{{ step.query }}”
+                  </span>
+                }
+
+                @if (step.evidence_count > 0) {
+                  <span>
+                    {{ step.evidence_count }}
+                    chunks
+                  </span>
+                }
+              </div>
+
+            </div>
+
+          </li>
+
+        }
+
+      </ol>
+
+
+      @if (
+        data.dependencies.length ||
+        data.risks.length
+      ) {
+
+        <div class="analysis">
+
+          @if (data.dependencies.length) {
+
+            <div class="analysis-block">
+
+              <span class="eyebrow">
+                DEPENDENCIES
+              </span>
+
+              <ul>
+                @for (
+                  dependency of data.dependencies;
+                  track dependency
+                ) {
+                  <li>{{ dependency }}</li>
+                }
+              </ul>
+
+            </div>
+
+          }
+
+          @if (data.risks.length) {
+
+            <div class="analysis-block">
+
+              <span class="eyebrow">
+                RISKS
+              </span>
+
+              <ul class="risks">
+                @for (
+                  risk of data.risks;
+                  track risk
+                ) {
+                  <li>{{ risk }}</li>
+                }
+              </ul>
+
+            </div>
+
+          }
+
+        </div>
+
+      }
+
+    </article>
+
+
+    @if (data.verification_passed !== null) {
+
+      <article
+        class="verification"
+        [class.failed]="!data.verification_passed"
+      >
+
+        <div class="summary-head">
+
+          <span class="eyebrow">
+            VERIFIER
+          </span>
+
+          <span
+            class="verdict"
+            [class.pass]="data.verification_passed"
+          >
+            {{
+              data.verification_passed
+                ? 'PASSED'
+                : 'NEEDS WORK'
+            }}
+          </span>
+
+        </div>
+
+        @if (data.critique) {
+          <p class="critique">
+            {{ data.critique }}
+          </p>
+        }
+
+        @if (data.issues.length) {
+
+          <ul class="issues">
+
+            @for (
+              issue of data.issues;
+              track $index
+            ) {
+              <li>{{ issue }}</li>
+            }
+
+          </ul>
+
+        }
+
+      </article>
+
+    }
+
+
+    @if (data.status === 'interrupted') {
+
+      <article class="approval">
+
+        <span class="eyebrow warning">
+          ⚠ HUMAN APPROVAL REQUIRED
+        </span>
+
+        <h3>
+          Release this deliverable?
+        </h3>
+
+        <p class="muted">
+          The workflow is paused. Approve to
+          release the draft, or reject to stop
+          it without side effects.
+        </p>
+
+        <textarea
+          [(ngModel)]="note"
+          name="note"
+          rows="2"
+          placeholder="Optional note for the audit trail..."
+        ></textarea>
+
+        <div class="approval-actions">
+
+          <button
+            class="danger-button"
+            type="button"
+            [disabled]="resuming()"
+            (click)="decide(false)"
+          >
+            Reject
+          </button>
+
+          <button
+            class="primary-button"
+            type="button"
+            [disabled]="resuming()"
+            (click)="decide(true)"
+          >
+            {{ resuming() ? 'Resuming...' : 'Approve' }}
+          </button>
+
+        </div>
+
+      </article>
+
+    }
+
+
+    @if (data.draft) {
+
+      <article class="deliverable">
+
+        <span class="eyebrow">
+          {{
+            data.status === 'completed'
+              ? 'APPROVED DELIVERABLE'
+              : 'DRAFT'
+          }}
+        </span>
+
+        <div class="prose">
+          {{ data.answer || data.draft }}
+        </div>
+
+      </article>
+
+    }
+
+
+    @if (data.evidence.length) {
+
+      <details class="evidence">
+
+        <summary>
+          Evidence used by the verifier
+          ({{ data.evidence.length }})
+        </summary>
+
+        @for (
+          item of data.evidence;
+          track item.document_id + '-' + item.position
+        ) {
+
+          <div class="evidence-item">
+
+            <div class="evidence-meta">
+              Document {{ item.document_id }}
+              · Chunk {{ item.position }}
+              · step {{ item.step_id }}
+              · similarity
+              {{ item.similarity }}
+            </div>
+
+            <p>
+              {{ item.content }}
+            </p>
+
+          </div>
+
+        }
+
+      </details>
+
+    }
+
+  }
+
+</section>

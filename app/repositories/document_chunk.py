@@ -17,11 +17,28 @@ class DocumentChunkRepository:
         await self.session.execute(
             delete(DocumentChunk).where(
                 DocumentChunk.document_id == document_id
-                
-    
             )
-    
         )
+
+        records = [
+            DocumentChunk(
+                document_id=document_id,
+                position=position,
+                content=content,
+                character_count=len(content),
+            )
+            for position, content in enumerate(chunks)
+        ]
+
+        self.session.add_all(records)
+
+        await self.session.commit()
+
+        for record in records:
+            await self.session.refresh(record)
+
+        return records
+
     async def semantic_search(
         self,
         query_embedding: list[float],
@@ -73,21 +90,29 @@ class DocumentChunkRepository:
         await self.session.commit()
 
         return chunks
-        records = [
-            DocumentChunk(
-                document_id=document_id,
-                position=position,
-                content=content,
-                character_count=len(content),
+
+    async def list_embedded(
+        self,
+    ) -> list[DocumentChunk]:
+        """Return every chunk that already has an embedding.
+
+        Used by the recommendation engine to build document profiles and
+        interest vectors. The demo corpus is small enough to aggregate in
+        Python; at larger scale this becomes a SQL ``avg(embedding)``.
+        """
+
+        result = await self.session.execute(
+            select(DocumentChunk)
+            .where(
+                DocumentChunk.embedding.is_not(None)
             )
-            for position, content in enumerate(chunks)
-        ]
+            .order_by(
+                DocumentChunk.document_id,
+                DocumentChunk.position,
+            )
+        )
 
-        self.session.add_all(records)
-
-        await self.session.commit()
-
-        return records
+        return list(result.scalars().all())
 
     async def list_for_document(
         self,

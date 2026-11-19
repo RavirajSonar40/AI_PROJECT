@@ -22,15 +22,15 @@
 
     <nav>
 
-      <a class="active">
+      <a routerLink="/agent" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         ✦ Agent
       </a>
 
-      <a>
+      <a routerLink="/knowledge" routerLinkActive="active">
         ▣ Knowledge
       </a>
 
-      <a>
+      <a routerLink="/observability" routerLinkActive="active">
         ◉ Observability
       </a>
 
@@ -94,49 +94,7 @@
 
     </header>
 
-    <div class="dashboard">
-
-      <app-chat-panel />
-
-      <aside class="right-column">
-
-        <app-system-status />
-
-        <app-document-panel />
-
-        <section class="architecture">
-
-          <span class="eyebrow">
-            CURRENT FLOW
-          </span>
-
-          <div class="flow">
-            Angular
-          </div>
-
-          <span>↓</span>
-
-          <div class="flow">
-            FastAPI
-          </div>
-
-          <span>↓</span>
-
-          <div class="flow">
-            LangGraph
-          </div>
-
-          <span>↓</span>
-
-          <div class="flow">
-            RAG · Tools · LLM
-          </div>
-
-        </section>
-
-      </aside>
-
-    </div>
+    <router-outlet />
 
   </main>
 

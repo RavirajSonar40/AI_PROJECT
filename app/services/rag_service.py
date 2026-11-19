@@ -6,6 +6,9 @@ from app.services.llm_provider import LLMProvider
 from app.services.query_embedding_cache import (
     generate_cached_query_embeddings,
 )
+from app.services.answer_cleanup import (
+    clean_model_answer,
+)
 
 from ..models.document_chunk import DocumentChunk
 
@@ -21,13 +24,15 @@ Rules:
 - Do not use external knowledge to fill missing information.
 - Answer clearly and concisely.
 - Answer in the same language as the user's question.
+- Do not add inline citation markers such as 【1†L1-L5】 or [2†L3-L6].
+  Sources are shown to the user separately.
 """.strip()
 
 
 INSUFFICIENT_CONTEXT_RESPONSE = (
-    "No tengo información suficiente "
-    "en los documentos disponibles "
-    "para responder a esa pregunta."
+    "I do not have enough information "
+    "in the available documents "
+    "to answer that question."
 )
 
 
@@ -149,4 +154,7 @@ QUESTION:
             user_prompt=user_prompt,
         )
 
-        return answer, relevant_matches
+        return (
+            clean_model_answer(answer),
+            relevant_matches,
+        )

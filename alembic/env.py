@@ -14,6 +14,9 @@ from app.core.config import settings
 from app.db.base import Base
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.models.evaluation import EvaluationCase, EvaluationRun
+from app.models.interaction import InteractionEvent
+from app.models.observability import LLMRequestLog
 
 
 config = context.config

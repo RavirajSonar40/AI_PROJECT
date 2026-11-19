@@ -30,6 +30,9 @@ from app.agents.state import (
 from app.agents.tools.system_info import (
     get_system_info,
 )
+from app.services.answer_cleanup import (
+    clean_model_answer,
+)
 
 
 TOOL_AGENT_SYSTEM_PROMPT = """
@@ -54,6 +57,10 @@ available in the tools.
 You may answer directly only for simple
 conversation that does not require
 platform or document information.
+
+Do not add inline citation markers such as
+【1†L1-L5】 or [2†L3-L6]. Sources are shown
+to the user separately.
 """.strip()
 
 
@@ -159,7 +166,7 @@ def build_tool_calling_graph(
         if not response.tool_calls:
             content = response.content
 
-            update["answer"] = (
+            update["answer"] = clean_model_answer(
                 content
                 if isinstance(
                     content,

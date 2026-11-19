@@ -48,32 +48,46 @@ def _generate_embeddings_sync(
     return embeddings.tolist()
 
 
-def _generate_document_embeddings_sync(
+def _encode_with_fallback(
     texts: list[str],
+    method_name: str,
 ) -> list[list[float]]:
     model = get_embedding_model()
 
-    embeddings = model.encode_document(
+    encoder = getattr(
+        model,
+        method_name,
+        None,
+    )
+
+    if encoder is None:
+        encoder = model.encode
+
+    embeddings = encoder(
         texts,
         normalize_embeddings=True,
         convert_to_numpy=True,
     )
 
     return embeddings.tolist()
+
+
+def _generate_document_embeddings_sync(
+    texts: list[str],
+) -> list[list[float]]:
+    return _encode_with_fallback(
+        texts,
+        "encode_document",
+    )
 
 
 def _generate_query_embeddings_sync(
     texts: list[str],
 ) -> list[list[float]]:
-    model = get_embedding_model()
-
-    embeddings = model.encode_query(
+    return _encode_with_fallback(
         texts,
-        normalize_embeddings=True,
-        convert_to_numpy=True,
+        "encode_query",
     )
-
-    return embeddings.tolist()
 
 
 async def generate_embeddings(

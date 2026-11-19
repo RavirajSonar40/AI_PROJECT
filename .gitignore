@@ -30,3 +30,6 @@ Thumbs.db
 # Uploaded documents
 data/uploads/*
 !data/uploads/.gitkeep
+
+# Hugging Face model cache
+data/hf-cache/

@@ -43,3 +43,61 @@ RATE_LIMIT_DECISIONS = Counter(
         "decision",
     ],
 )
+
+
+LLM_REQUESTS = Counter(
+    "ai_platform_llm_requests",
+    "User-facing AI requests.",
+    [
+        "endpoint",
+        "pipeline",
+        "success",
+    ],
+)
+
+
+LLM_LATENCY_SECONDS = Histogram(
+    "ai_platform_llm_request_duration_seconds",
+    "End-to-end latency of AI requests in seconds.",
+    [
+        "endpoint",
+        "pipeline",
+    ],
+)
+
+
+LLM_TOKENS = Counter(
+    "ai_platform_llm_tokens",
+    "Estimated LLM tokens consumed.",
+    [
+        "endpoint",
+        "direction",
+    ],
+)
+
+
+RECOMMENDATION_REQUESTS = Counter(
+    "ai_platform_recommendation_requests",
+    "Recommendation requests.",
+    [
+        "strategy",
+    ],
+)
+
+
+RECOMMENDATION_FEEDBACK = Counter(
+    "ai_platform_recommendation_feedback",
+    "Recommendation feedback events.",
+    [
+        "relevant",
+    ],
+)
+
+
+EVALUATION_RUNS = Counter(
+    "ai_platform_evaluation_runs",
+    "Evaluation runs.",
+    [
+        "status",
+    ],
+)

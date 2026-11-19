@@ -1,0 +1,22 @@
+[
+  {
+    "user_id": "backend-user",
+    "recommended_document_ids": [11, 14, 17, 10, 3],
+    "relevant_document_ids": [11, 14, 17]
+  },
+  {
+    "user_id": "support-user",
+    "recommended_document_ids": [7, 18, 6, 4, 12],
+    "relevant_document_ids": [7, 18, 20]
+  },
+  {
+    "user_id": "people-user",
+    "recommended_document_ids": [1, 2, 4, 16, 9],
+    "relevant_document_ids": [1, 2, 4]
+  },
+  {
+    "user_id": "platform-user",
+    "recommended_document_ids": [12, 13, 14, 17, 15],
+    "relevant_document_ids": [12, 13, 14, 17, 15]
+  }
+]

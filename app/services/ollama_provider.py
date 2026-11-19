@@ -1,6 +1,7 @@
 import httpx
 from app.core.config import settings
 from app.core.errors import ExternalServiceError
+from app.services.llm_usage import LLMUsage
 
 class LLMProviderError(
     ExternalServiceError
@@ -12,6 +13,7 @@ class OllamaProvider:
     def __init__(self) -> None:
         self.base_url = settings.ollama_base_url
         self.model = settings.ollama_model
+        self.last_usage: LLMUsage | None = None
 
     async def generate_structured(
         self,
@@ -56,6 +58,7 @@ class OllamaProvider:
             ) from exc
 
         data = response.json()
+        self.last_usage = _ollama_usage(data)
 
         try:
             return (
@@ -113,6 +116,7 @@ class OllamaProvider:
             ) from exc
 
         data = response.json()
+        self.last_usage = _ollama_usage(data)
 
         try:
             return data["message"]["content"].strip()
@@ -121,3 +125,13 @@ class OllamaProvider:
             raise LLMProviderError(
                 "The LLM provider returned an invalid response."
             ) from exc
+
+
+def _ollama_usage(data: dict) -> LLMUsage | None:
+    prompt = data.get("prompt_eval_count")
+    completion = data.get("eval_count")
+    if prompt is None and completion is None:
+        return None
+    prompt = int(prompt or 0)
+    completion = int(completion or 0)
+    return LLMUsage(prompt, completion, prompt + completion, "provider")

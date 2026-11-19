@@ -19,6 +19,9 @@ tests
 data
 uploads
 
+frontend
+node_modules
+
 *.log
 
 README.md
